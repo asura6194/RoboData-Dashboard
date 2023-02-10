@@ -1,0 +1,77 @@
+hr {
+    margin: 0px;
+    height: 5px;
+    background-color: #F8A030;
+    border: none;
+}
+.app-body {
+    background-color: #0b0a27;
+    color: #FFFFFF;
+    font-family: Arial, sans-serif;
+}
+.image-container {
+    text-align: center;
+    background-color: #0b0a27;
+}
+.top-title {
+    text-align: center;
+    margin-top: 0px;
+    background-color: #F8A030;
+    width: fit-content;
+    padding: 15px;
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 0px 0px 20px 20px;
+}
+.charts-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+.chart {
+    padding: 10px;
+    color: white;
+    margin: 10px;
+    border-radius: 10px;
+    background-color: #0b0a27;
+    min-width: 700px;
+}
+.chart h2{
+    text-align: center;
+    color: white;
+}
+.chart-options {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+.chart label {
+    margin-right: 10px;
+}
+.chart select {
+    border-radius: 5px;
+    font-size: 15px;
+    outline: none;
+}
+.trip-selectors {
+    margin-bottom: 20px;
+    margin-right: 40px;
+    display: inline-block;
+}
+.trips {
+    font-size: 18px;
+    text-align: center;
+}
+.trips-big {
+    font-size: 24px;
+}
+.apexcharts-menu-item, .apexcharts-tooltip {
+    color: black;
+}
+.special {
+    border: 2px solid #F8A030;
+    min-width: auto !important;
+}

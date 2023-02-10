@@ -1,11 +1,10 @@
-import logo from './logo.svg';
-import { useState , useEffect} from 'react';
+import { useState } from 'react';
 import './App.css';
 import ReactApexChart  from "react-apexcharts";
-import myData from './data.json';
+import mainData from './data.json';
 
 
-function App() {
+function App(prop) {
   const [jobsChartGranularity,setColumnChartGranularity] = useState('Hours');
   const [distanceChartGranularity,setDistanceChartGranularity] = useState('Hours');
   const [distanceChartFrom,setDistanceChartFrom] = useState();
@@ -16,8 +15,12 @@ function App() {
     abortCount:0,
     emergencyCount:0
   };
-  let [maxT,minT] = [0,Infinity]
-  myData.JobStats.forEach((job,index)=>{
+  let tripMap = new Map();
+
+
+  //Processing jobs to get time and node traveled data
+  let [maxT,minT] = [0,Infinity];
+  mainData.JobStats.forEach((job,index)=>{
     if(job.SuccessFlag) {
       pieChartData.successCount++;
     } else {
@@ -32,7 +35,22 @@ function App() {
     maxT = Math.max(maxT,job.TimeStamp);
     minT = Math.min(minT,job.TimeStamp);
     job.TimeStamp2 = new Date(job.TimeStamp*1000);
+    if(tripMap.has(job.Start_Node_Name)) {
+      let toMap = tripMap.get(job.Start_Node_Name);
+      if(toMap.has(job.End_Node_Name)) {
+        toMap.set(job.End_Node_Name,toMap.get(job.End_Node_Name)+1);
+      } else {
+        toMap.set(job.End_Node_Name,1);
+      }
+    } else {
+      tripMap.set(job.Start_Node_Name,new Map().set(job.End_Node_Name,1));
+    }
   });
+  // console.log(tripMap);
+  const [nodeFrom,setNodeFrom] = useState(tripMap.entries().next().value[0]);
+  const [nodeTo,setNodeTo] = useState(tripMap.get(nodeFrom).entries().next().value[0]);
+
+  
   minT = new Date(minT*1000);
   maxT = new Date(maxT*1000);
   // console.log(`MIN : ${minT}  MAX: ${maxT}`);
@@ -41,47 +59,47 @@ function App() {
   let maxTforJobsChart = new Date(maxT);
   maxTforJobsChart.setHours(maxTforJobsChart.getHours()+1);
   maxTforJobsChart.setMinutes(0,0,0);
-  console.log(`MINTHOUR : ${minTforJobsChart} MAXTHOUR : ${maxTforJobsChart} `);
+  // console.log(`MINTHOUR : ${minTforJobsChart} MAXTHOUR : ${maxTforJobsChart} `);
   let totalJobsTimeSeries = [];
   let totalJobsSeries = [];
   let totalDistanceTimeSeries = [];
   let totalDistanceSeries = [];
   let columnChartIntervals = ['Hours','4 Hours','Days'];
-  let columnChartOf = ['jobsTotal','distanceTotal'];
   let columnCharIntervalsTime = {
     'Hours' : 60*60*1000,
     '4 Hours' : 60*60*1000*4,
     'Days' : 60*60*1000*24
   };
 
-
+  function makeDateTimeString(granularity,minTime) {
+    return (granularity === 'Days'?`${minTime.getDate()}/${minTime.getMonth()}/${minTime.getFullYear()}`
+                          :`${minTime.getDate()}/${minTime.getMonth()} - ${minTime.getHours()}:00`);
+  }
   function createGraphData(xAxisSeries,yAxisSeries,minTime,maxTime,granularity,chartType) {
     let i=0;
     while(minTime < maxTime) {
-      xAxisSeries.push(granularity=='Days'?`${minTime.getDate()}/${minTime.getMonth()}/${minTime.getFullYear()}`
-                          :`${minTime.getHours()}:${minTime.getMinutes()}:${minTime.getSeconds()} -   ${minTime.getDate()}/${minTime.getMonth()}/${minTime.getFullYear()}`);
-      
+      xAxisSeries.push(makeDateTimeString(granularity,minTime));
       yAxisSeries[i] = 0;
-      myData.JobStats.forEach((job)=>{
+      mainData.JobStats.forEach((job)=>{
         let tempTime = new Date(minTime).getTime();
-        if(chartType == 'jobsTotal' && job.TimeStamp*1000>=tempTime && job.TimeStamp*1000<= tempTime+columnCharIntervalsTime[granularity]) {
+        if(chartType === 'jobsTotal' && job.TimeStamp*1000>=tempTime && job.TimeStamp*1000<= tempTime+columnCharIntervalsTime[granularity]) {
           yAxisSeries[i]++;
         }
-        if(chartType == 'distanceTotal' && job.TimeStamp*1000>=tempTime && job.TimeStamp*1000<= tempTime+columnCharIntervalsTime[granularity]) {
+        if(chartType === 'distanceTotal' && job.TimeStamp*1000>=tempTime && job.TimeStamp*1000<= tempTime+columnCharIntervalsTime[granularity]) {
           yAxisSeries[i]+=job.Distance;
         }
       });
       i++;
-      if(granularity =='Hours') {
+      if(granularity === 'Hours') {
         minTime.setHours(minTime.getHours()+1);
-      } else if (granularity =='4 Hours') {
+      } else if (granularity === '4 Hours') {
         minTime.setHours(minTime.getHours()+4);
       } else {
         minTime.setDate(minTime.getDate()+1);
       }
     }
-    console.log(xAxisSeries);
-    console.log(yAxisSeries);
+    // console.log(xAxisSeries);
+    // console.log(yAxisSeries);
   };
   createGraphData(totalJobsTimeSeries,totalJobsSeries,minTforJobsChart,maxTforJobsChart,jobsChartGranularity,'jobsTotal');
 
@@ -100,7 +118,7 @@ function App() {
   while(tempTimeStart1 < tempTimeEnd1) {
     totalDistanceTimeSeriesFrom.push({
       'timeObj':new Date(tempTimeStart1),
-      'timeNotation':  `${tempTimeStart1.getHours()}:${tempTimeStart1.getMinutes()}:${tempTimeStart1.getSeconds()} -   ${tempTimeStart1.getDate()}/${tempTimeStart1.getMonth()}/${tempTimeStart1.getFullYear()}`
+      'timeNotation':  makeDateTimeString(null,tempTimeStart1),
     });
     tempTimeStart1.setHours(tempTimeStart1.getHours()+1);
   }
@@ -121,7 +139,7 @@ function App() {
   while(tempTimeEnd2 > tempTimeStart2) {
     totalDistanceTimeSeriesTo.push({
       'timeObj':new Date(tempTimeEnd2),
-      'timeNotation':  `${tempTimeEnd2.getHours()}:${tempTimeEnd2.getMinutes()}:${tempTimeEnd2.getSeconds()} -   ${tempTimeEnd2.getDate()}/${tempTimeEnd2.getMonth()}/${tempTimeEnd2.getFullYear()}`
+      'timeNotation':  makeDateTimeString(null,tempTimeEnd2),
     });
     tempTimeEnd2.setHours(tempTimeEnd2.getHours()-1);
   }
@@ -145,27 +163,116 @@ function App() {
     maxTforDistanceChart.setMinutes(0,0,0);
   }
   createGraphData(totalDistanceTimeSeries,totalDistanceSeries,minTforDistanceChart,maxTforDistanceChart,distanceChartGranularity,'distanceTotal');
-  
 
+
+  let statusChartCountSeries = mainData.TotalStats[0].TotalStatusCount;
+  let statusChartXSeries = () => {
+    let tempArr = []
+    for(let i = 0;i<statusChartCountSeries.length;i++) {
+      tempArr.push(i);
+    }
+    return tempArr;
+  };
+  let gridConfig = {
+    show: true,
+    borderColor: '#90A4AE',
+    strokeDashArray: 0,
+    position: 'back',
+    xaxis: {
+        lines: {
+            show: false
+        }
+    },   
+    yaxis: {
+        lines: {
+            show: true
+        }
+    },  
+    row: {
+        colors: undefined,
+        opacity: 0.5
+    },  
+    column: {
+        colors: undefined,
+        opacity: 0.5
+    },  
+    padding: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0
+    },  
+  };
+  const statusChartConfig = {
+    series: [{
+      name: 'Status Count',
+      data: statusChartCountSeries
+    }],
+    options: {
+      chart: {
+        type: 'bar',
+        height: 350
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: '55%',
+          endingShape: 'rounded'
+        },
+      },
+      dataLabels: {
+        enabled: false
+      },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: ['transparent']
+      },
+      xaxis: {
+        title: {
+          text: 'Status Code',
+          style: {
+            fontSize:  '16px',
+            fontWeight:  'bold',
+            fontFamily:  'Arial, sans-serif',
+            color:  'white'
+          },
+        },
+        categories: statusChartXSeries(),
+        labels: {
+          style: {
+              colors: 'white',
+              fontSize: '12px',
+              fontFamily: 'Arial, sans-serif',
+          },
+        }
+      },
+      yaxis: {
+        title: {
+          text: 'Status Count',
+          style: {
+            fontSize:  '16px',
+            fontWeight:  'bold',
+            fontFamily:  undefined,
+            color:  'white'
+          },
+        },
+        labels: {
+          style: {
+              colors: ['white'],
+              fontSize: '12px',
+              fontFamily: 'Arial, sans-serif',
+          },
+        }
+      },
+      grid:gridConfig,
+    },
+  };
   const pieChartConfig = {
             series: [pieChartData.successCount, pieChartData.abortCount,pieChartData.emergencyCount],
             options: {
-              title: {
-                text: 'Job Success Chart',
-                align: 'center',
-                margin: 10,
-                offsetX: 0,
-                offsetY: 0,
-                floating: false,
-                style: {
-                  fontSize:  '24px',
-                  fontWeight:  'bold',
-                  fontFamily:  undefined,
-                  color:  '#263238'
-                },
-              },
               labels: ['Success Count', 'Abort Count','Emergency Count'],
-              colors:['#C3FF99', '#F7A76C','#EC7272'],
+              colors:['#9CFF2E', '#F7A76C','#EC7272'],
               stroke: {
                 show: false,
                 curve: 'smooth',
@@ -199,7 +306,7 @@ function App() {
                 hover: {
                     filter: {
                         type: 'darken',
-                        value: 0.5,
+                        value: 0.7,
                     }
                 },
                 active: {
@@ -209,11 +316,16 @@ function App() {
                         value: 0.35,
                     }
                 },
+              },
+              legend: {
+                labels: {
+                  colors: 'white',
+                  useSeriesColors: false
+                },
               }
             }
-          };
-
-    const totalJobsChartConfig = {
+  };
+  const totalJobsChartConfig = {
       series: [{
         name: 'Total Jobs Taken',
         data: totalJobsSeries
@@ -240,18 +352,45 @@ function App() {
         },
         xaxis: {
           categories: totalJobsTimeSeries,
+          labels: {
+            style: {
+                colors: 'white',
+                fontSize: '12px',
+                fontFamily: 'Arial, sans-serif',
+            },
+          },
+          title: {
+            text: 'Status Code',
+            style: {
+              fontSize:  '16px',
+              fontWeight:  'bold',
+              fontFamily:  'Arial, sans-serif',
+              color:  'white'
+            },
+          }
         },
         yaxis: {
           title: {
-            text: 'Total Jobs taken'
+            text: 'Status Count',
+            style: {
+              fontSize:  '16px',
+              fontWeight:  'bold',
+              fontFamily:  undefined,
+              color:  'white'
+            },
+          },
+          labels: {
+            style: {
+                colors: ['white'],
+                fontSize: '12px',
+                fontFamily: 'Arial, sans-serif',
+            },
           }
         },
-        fill: {
-          opacity: 1
-        },
+        grid:gridConfig,
       },
-    };
-    const totalDistanceChartConfig = {
+  };
+  const totalDistanceChartConfig = {
       series: [{
         name: 'Total Distance Traveled',
         data: totalDistanceSeries
@@ -278,63 +417,134 @@ function App() {
         },
         xaxis: {
           categories: totalDistanceTimeSeries,
+          labels: {
+            style: {
+                colors: 'white',
+                fontSize: '12px',
+                fontFamily: 'Arial, sans-serif',
+            },
+          },
+          title: {
+            text: 'Status Code',
+            style: {
+              fontSize:  '16px',
+              fontWeight:  'bold',
+              fontFamily:  'Arial, sans-serif',
+              color:  'white'
+            },
+          }
         },
         yaxis: {
           title: {
-            text: 'Total Distance Traveled'
+            text: 'Status Count',
+            style: {
+              fontSize:  '16px',
+              fontWeight:  'bold',
+              fontFamily:  undefined,
+              color:  'white'
+            },
+          },
+          labels: {
+            style: {
+                colors: ['white'],
+                fontSize: '12px',
+                fontFamily: 'Arial, sans-serif',
+            },
           }
         },
-        fill: {
-          opacity: 1
-        },
+        grid:gridConfig,
+        tooltip: {
+          style: {
+            color: 'black',
+          }
+        }
       },
-    };
+  };
   return (
     <>
-      <div>
-        <ReactApexChart 
-          options={pieChartConfig.options} series={pieChartConfig.series} type="pie" width={700} >
-        </ReactApexChart>
-      </div>
-      <div>
-        <h2>Total jobs Chart</h2>
-        <div>
-          <label for="granularity">Granularity:</label>
-          <select name="granularity" id="granularity" onChange={(e)=>{setColumnChartGranularity(e.target.value);}}>
-            {columnChartIntervals.map((e)=><option value={e}>{e}</option>)}
-          </select>
+      <div class="app-body">
+        <div class="image-container">
+          <img src="HBR_Logo.png" alt="Hachidori Robotics Logo"></img>
         </div>
-        <div>
-          <ReactApexChart 
-            options={totalJobsChartConfig.options} series={totalJobsChartConfig.series} type="bar" width={700} >
-          </ReactApexChart>
-        </div>
-      </div>
-      <div>
-        <h2>Total Distance Chart</h2>
-        <div>
-          <label for="granularity">Granularity:</label>
-          <select name="granularity" id="granularity" onChange={(e)=>{setDistanceChartGranularity(e.target.value);}}>
-            {columnChartIntervals.map((e)=><option value={e}>{e}</option>)}
-          </select>
-        </div>
-        <div>
-          <label for="from">From:</label>
-          <select name="from" id="from" onChange={(e)=>{setDistanceChartFrom(e.target.value);console.log((e.target.value))}}>
-            {totalDistanceTimeSeriesFrom.map((e)=><option value={e.timeObj.getTime()}>{e.timeNotation}</option>)}
-          </select>
-        </div>
-        <div>
-          <label for="to">To:</label>
-          <select name="to" id="to" onChange={(e)=>{setDistanceChartTo(e.target.value);}}>
-            {totalDistanceTimeSeriesTo.map((e)=><option value={e.timeObj.getTime()}>{e.timeNotation}</option>)}
-          </select>
-        </div>
-        
-        <div>
-          <ReactApexChart 
-            options={totalDistanceChartConfig.options} series={totalDistanceChartConfig.series} type="bar" width={1000} >
-          </ReactApexChart>
+        <hr ></hr>
+        <h1 class="top-title">
+          Robo Dashboard
+        </h1>
+        <div class="charts-container">
+            <div class="chart">
+              <h2>Status Chart</h2>
+              <div>
+                <ReactApexChart 
+                  options={statusChartConfig.options} series={statusChartConfig.series} type="bar" width={700} >
+                </ReactApexChart>
+              </div>
+            </div>
+            <div class="chart">
+              <h2>Job Success Chart</h2>
+              <ReactApexChart 
+                options={pieChartConfig.options} series={pieChartConfig.series} type="pie" width={600} >
+              </ReactApexChart>
+            </div>
+            <div class="chart">
+              <h2>Total jobs Chart</h2>
+              <div>
+                <label for="granularity">Granularity:</label>
+                <select name="granularity" id="granularity" onChange={(e)=>{setColumnChartGranularity(e.target.value);}}>
+                  {columnChartIntervals.map((e)=><option value={e}>{e}</option>)}
+                </select>
+              </div>
+              <div>
+                <ReactApexChart 
+                  options={totalJobsChartConfig.options} series={totalJobsChartConfig.series} type="bar" width={700} >
+                </ReactApexChart>
+              </div>
+            </div>
+            <div class="chart">
+              <h2>Total Distance Chart</h2>
+              <div class = "chart-options">
+                <div>
+                  <label for="granularity">Granularity:</label>
+                  <select name="granularity" id="granularity" onChange={(e)=>{setDistanceChartGranularity(e.target.value);}}>
+                    {columnChartIntervals.map((e)=><option value={e}>{e}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label for="from">From:</label>
+                  <select name="from" id="from" onChange={(e)=>{setDistanceChartFrom(e.target.value);console.log((e.target.value))}}>
+                    {totalDistanceTimeSeriesFrom.map((e)=><option value={e.timeObj.getTime()}>{e.timeNotation}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label for="to">To:</label>
+                  <select name="to" id="to" onChange={(e)=>{setDistanceChartTo(e.target.value);}}>
+                    {totalDistanceTimeSeriesTo.map((e)=><option value={e.timeObj.getTime()}>{e.timeNotation}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <ReactApexChart 
+                  options={totalDistanceChartConfig.options} series={totalDistanceChartConfig.series} type="bar" width={700} >
+                </ReactApexChart>
+              </div>
+            </div>
+            <div class="chart special">
+            <h2>Robo Trips Count</h2>
+                <div class="trip-selectors">
+                  <label for="fromNode">From Node:</label>
+                  <select name="fromNode" id="fromNode" onChange={(e)=>{setNodeFrom(e.target.value);setNodeTo(tripMap.get(e.target.value).entries().next().value[0])}}>
+                    {Array.from(tripMap.keys()).map((v)=><option value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div class="trip-selectors">
+                  <label for="toNode">To Node:</label>
+                  <select name="toNode" id="toNode" onChange={(e)=>setNodeTo(e.target.value)} >
+                    {Array.from(tripMap.get(nodeFrom).keys()).map((v)=><option value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div class="trips">
+                  Number of Trips : <span class="trips-big">{tripMap.get(nodeFrom).get(nodeTo)}</span>
+                </div>
+            </div>   
         </div>
       </div>
       
