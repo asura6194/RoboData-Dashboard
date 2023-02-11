@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './App.css';
 import ReactApexChart  from "react-apexcharts";
 import mainData from './data.json';
+import logo from './HBR_Logo.png'
 
 
 function App(prop) {
@@ -230,7 +231,7 @@ function App(prop) {
       },
       xaxis: {
         title: {
-          text: 'Status Code',
+          text: 'Status Codes',
           style: {
             fontSize:  '16px',
             fontWeight:  'bold',
@@ -360,7 +361,7 @@ function App(prop) {
             },
           },
           title: {
-            text: 'Status Code',
+            text: 'Duration',
             style: {
               fontSize:  '16px',
               fontWeight:  'bold',
@@ -371,7 +372,7 @@ function App(prop) {
         },
         yaxis: {
           title: {
-            text: 'Status Count',
+            text: 'Total jobs taken',
             style: {
               fontSize:  '16px',
               fontWeight:  'bold',
@@ -425,7 +426,7 @@ function App(prop) {
             },
           },
           title: {
-            text: 'Status Code',
+            text: 'Time duration',
             style: {
               fontSize:  '16px',
               fontWeight:  'bold',
@@ -436,7 +437,7 @@ function App(prop) {
         },
         yaxis: {
           title: {
-            text: 'Status Count',
+            text: 'Total Distance',
             style: {
               fontSize:  '16px',
               fontWeight:  'bold',
@@ -464,7 +465,7 @@ function App(prop) {
     <>
       <div class="app-body">
         <div class="image-container">
-          <img src="HBR_Logo.png" alt="Hachidori Robotics Logo"></img>
+          <img src={logo} alt="Hachidori Robotics Logo"></img>
         </div>
         <hr ></hr>
         <h1 class="top-title">
