@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/RoboData-Dashboard/static/css/main.eeb5e37b.css",
-    "main.js": "/RoboData-Dashboard/static/js/main.fd368c19.js",
+    "main.js": "/RoboData-Dashboard/static/js/main.ef3f1d72.js",
     "static/js/787.a7819430.chunk.js": "/RoboData-Dashboard/static/js/787.a7819430.chunk.js",
     "index.html": "/RoboData-Dashboard/index.html",
     "main.eeb5e37b.css.map": "/RoboData-Dashboard/static/css/main.eeb5e37b.css.map",
-    "main.fd368c19.js.map": "/RoboData-Dashboard/static/js/main.fd368c19.js.map",
+    "main.ef3f1d72.js.map": "/RoboData-Dashboard/static/js/main.ef3f1d72.js.map",
     "787.a7819430.chunk.js.map": "/RoboData-Dashboard/static/js/787.a7819430.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.eeb5e37b.css",
-    "static/js/main.fd368c19.js"
+    "static/js/main.ef3f1d72.js"
   ]
 }
